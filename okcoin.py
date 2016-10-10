@@ -43,7 +43,7 @@ async def processMarketData(channelSubscriptions):
 # 	return mapping
 
 def getChannelDict(): 
-	channels  = ["ok_sub_spotusd_btc_ticker", "ok_sub_spotusd_ltc_ticker", "ok_sub_spotusd_btc_depth_20", "ok_sub_spotusd_ltc_depth_20", "ok_sub_spotusd_btc_depth_60", "ok_sub_spotusd_ltc_depth_60"]
+	channels  = ["ok_sub_spotusd_btc_ticker", "ok_sub_spotusd_ltc_ticker", "ok_sub_spotusd_btc_depth_20", "ok_sub_spotusd_ltc_depth_20", "ok_sub_spotusd_btc_depth_60", "ok_sub_spotusd_ltc_depth_60", "ok_sub_spotusd_btc_trades", "ok_sub_spotusd_ltc_trades", "ok_sub_spotusd_btc_kline_1min", "ok_sub_spotusd_btc_kline_3min", "ok_sub_spotusd_btc_kline_5min", "ok_sub_spotusd_btc_kline_15min", "ok_sub_spotusd_btc_kline_30min", "ok_sub_spotusd_btc_kline_1hour", "ok_sub_spotusd_btc_kline_2hour", "ok_sub_spotusd_btc_kline_4hour", "ok_sub_spotusd_btc_kline_6hour", "ok_sub_spotusd_btc_kline_12hour", "ok_sub_spotusd_btc_kline_day", "ok_sub_spotusd_btc_kline_3day", "ok_sub_spotusd_btc_kline_week", "ok_sub_spotusd_ltc_kline_1min", "ok_sub_spotusd_ltc_kline_3min", "ok_sub_spotusd_ltc_kline_5min", "ok_sub_spotusd_ltc_kline_15min", "ok_sub_spotusd_ltc_kline_30min", "ok_sub_spotusd_ltc_kline_1hour", "ok_sub_spotusd_ltc_kline_2hour", "ok_sub_spotusd_ltc_kline_4hour", "ok_sub_spotusd_ltc_kline_6hour", "ok_sub_spotusd_ltc_kline_12hour", "ok_sub_spotusd_ltc_kline_day", "ok_sub_spotusd_ltc_kline_3day", "ok_sub_spotusd_ltc_kline_week"]
 	return channels
 
 def consumer(marketData): 
