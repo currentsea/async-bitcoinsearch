@@ -25,11 +25,16 @@ import asyncio
 import websockets
 import json 
 import os
-
+import re
+import ticker
 import elasticsearch
+import orderbook
+import os, time, datetime, sys, json, hashlib, zlib, base64, json, re, elasticsearch, argparse, uuid, pytz
 
 OKCOIN_WEBSOCKETS_URL= "wss://real.okcoin.com:10440/websocket/okcoinapi"
-DEFAULT_INDEX = "currentsea"  
+DEFAULT_INDEX = "currentsea" 
+CHANNEL_FILE = "channels.txt" 
+
 class OkCoinSocket: 
 
 	## Possible "To Do" - replace params with **kwargs
@@ -55,7 +60,7 @@ class OkCoinSocket:
 
 	def getChannelDict(self): 
 		channelDict = []
-		with open("channels.txt") as channels: 
+		with open(CHANNEL_FILE) as channels: 
 			for line in channels: 
 				channelDict.append(line.strip()) 
 		return channelDict
@@ -63,9 +68,17 @@ class OkCoinSocket:
 	def consumer(self, marketData): 
 		connection = elasticsearch.Elasticsearch(self.esHost)
 		self.ensure(connection) 
-		jsonData = json.loads(marketData) 
-		print (jsonData)
-
+		dataSet = json.loads(marketData) 
+		item = {}
+		for infoPoint in dataSet: 
+			try: 
+				channel = str(infoPoint["channel"])
+				# ticker|depth|trades|kline|ticker|index
+				regex = "ok_sub_(spotusd|futureusd)_(b|l)tc_(.[A-Za-z0-9]+)"
+				search = re.search(regex, channel) 
+				print (infoPoint)
+			except: 
+				raise
 	# Ensures the most up to date mappings and such are set in elasticsearch 
 	def ensure(self, connection):
 		if self.active == True: 
@@ -76,6 +89,10 @@ class OkCoinSocket:
 				self.active = True 
 			except:
 				pass
+		pass 
+
+	def docMappings(self): 
+		return self.es.indices.put_mapping(index=DEAFULT_INDEX, doc_type="orderbook", body=orderbook.orderbookMapping)
 
 	def capture(self, knowledge, channelName, indexName=DEFAULT_INDEX): 
 		newDocUploadRequest = self.es.create(index=indexName, doc_type=channelName, ignore=[400], id=uuid.uuid4(), body=dto)
@@ -83,15 +100,12 @@ class OkCoinSocket:
 
 	def initialize(self): 
 		channels = self.getChannelDict()
-		asyncio.get_event_loop().run_until_complete(self.processMarketData(channels)) 	
+		return asyncio.get_event_loop().run_until_complete(self.processMarketData(channels)) 	
 
-# async def processor():
-# 	async with websockets.connect(OKCOIN_WEBSOCKETS_URL) as websocket:
-# 		substr = "{'event':'addChannel','channel':'ok_sub_spotusd_btc_ticker'}"
-# 		await websocket.send(substr)
-
-# 		greeting = await websocket.recv()]
 if __name__ == "__main__":
-	socket = OkCoinSocket("http://localhost:9200") 
+	try: 
+		esHost = sys.argv[1]
+	except: 
+		esHost = "http://localhost:9200" 
+		socket = OkCoinSocket(esHost) 
 	socket.initialize() 
-	# print (dictShit) 
