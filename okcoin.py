@@ -24,22 +24,27 @@
 import asyncio
 import websockets
 import json 
-OKCOIN_WEBSOCKETS_URL= "wss://real.okcoin.com:10440/websocket/okcoinapi"
+import os
 
+import elasticsearch
+
+OKCOIN_WEBSOCKETS_URL= "wss://real.okcoin.com:10440/websocket/okcoinapi"
+DEFAULT_INDEX = "currentsea"  
 class OkCoinSocket: 
 
 	## Possible "To Do" - replace params with **kwargs
 	def __init__(self, esHost): 
-		pass 
+		self.esHost = esHost
+		self.active = False 
 
 	@asyncio.coroutine
 	async def processMarketData(self, channelSubscriptions): 
 		async with websockets.connect(OKCOIN_WEBSOCKETS_URL) as websocket:
 			try: 
 				for subscription in channelSubscriptions: 
-					print ("subscription: " + subscription)
 					await websocket.send("{'event':'addChannel','channel':'" + subscription + "'}") 
 				greeting = await websocket.recv()
+				print (greeting) 
 			finally: 
 				while True:
 					try:
@@ -56,8 +61,25 @@ class OkCoinSocket:
 		return channelDict
 
 	def consumer(self, marketData): 
+		connection = elasticsearch.Elasticsearch(self.esHost)
+		self.ensure(connection) 
 		jsonData = json.loads(marketData) 
 		print (jsonData)
+
+	# Ensures the most up to date mappings and such are set in elasticsearch 
+	def ensure(self, connection):
+		if self.active == True: 
+			try:
+				connection.indices.create("currentsea") 
+			except elasticsearch.exceptions.RequestError as e:
+				print ("INDEX " + DEFAULT_INDEX + " ALREADY EXISTS")
+				self.active = True 
+			except:
+				pass
+
+	def capture(self, knowledge, channelName, indexName=DEFAULT_INDEX): 
+		newDocUploadRequest = self.es.create(index=indexName, doc_type=channelName, ignore=[400], id=uuid.uuid4(), body=dto)
+		return newDocUploadRequest["created"]
 
 	def initialize(self): 
 		channels = self.getChannelDict()
