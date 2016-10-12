@@ -75,7 +75,6 @@ class Okcoin():
 		connector.send("{'event':'addChannel','channel':'ok_sub_spotusd_btc_trades'}")
 		connector.send("{'event':'addChannel','channel':'ok_sub_spotusd_ltc_trades'}");
 		connector.send("{'event':'addChannel','channel':'ok_sub_spotusd_btc_trades'}");
-
 		websocket.send("{'event':'addChannel','channel':'ok_sub_spotusd_X_kline_Y'}");
 		klineList = []
 		klineTypes = ['1min', '3min', '5min', '15min', '30min', '1hour', '2hour', '4hour', '6hour', '12hour', 'day', '3day', 'week']
