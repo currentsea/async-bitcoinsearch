@@ -15,8 +15,13 @@ This project has been tested on `3.5.2` and _will not work_  `Python 2.X.X`
 * The channels used in the websockets connector are from the OkCoin Public Websockets API which can be read about in detail at this URL: `https://www.okcoin.com/about/ws_api.do`
 
 ## Python 3 Modules
+* This project requires `pip3` which can be acquired by running the following command 
+`sudo easy_install 
 
 ## Like My Work? 
-* Feel free to donate to the following BTC Address: 
+* Feel free to donate to the BTC Address shown below :) 
 `1AUr1JGVHc5VXozb2B2iJeqaW4v9SUhvQD`
-Your Donations are much appreciated and keep projects like this alive and well. 
+*_Your Donations are much appreciated and keep projects like this alive and well._*
+
+## Keybase
+* Check me out on keybase. https://keybase.io/currentsea 
