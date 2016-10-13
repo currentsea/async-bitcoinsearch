@@ -87,6 +87,7 @@ class OkCoinSocket:
 					mybook = Orderbook()
 					dto = mybook.getDepthDtoList(infoPoint, currencyPair, isFuture)
 					for item in dto: 
+						item["websocket_name"] = channel
 						print(self.postDto(item, connection))
 					# print (infoPoint)
 			except: 
