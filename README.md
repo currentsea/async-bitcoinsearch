@@ -25,3 +25,22 @@ This project has been tested on `3.5.2` and _will not work_  `Python 2.X.X`
 
 ## Keybase
 * Check me out on keybase. https://keybase.io/currentsea 
+
+## IMPLEMENTED SOCKETS
+The following list of OkCoin Websocket Channels has been implemented successfully
+* ok_sub_spotusd_btc_depth_20
+* ok_sub_spotusd_ltc_depth_20
+* ok_sub_spotusd_btc_depth_60
+* ok_sub_spotusd_ltc_depth_60
+* ok_sub_futureusd_btc_depth_this_week_20
+* ok_sub_futureusd_btc_depth_next_week_20
+* ok_sub_futureusd_btc_depth_quarter_20
+* ok_sub_futureusd_btc_depth_this_week_60
+* ok_sub_futureusd_btc_depth_next_week_60
+* ok_sub_futureusd_btc_depth_quarter_60
+* ok_sub_futureusd_ltc_depth_this_week_20
+* ok_sub_futureusd_ltc_depth_next_week_20
+* ok_sub_futureusd_ltc_depth_quarter_20
+* ok_sub_futureusd_ltc_depth_this_week_60
+* ok_sub_futureusd_ltc_depth_next_week_60
+* ok_sub_futureusd_ltc_depth_quarter_60

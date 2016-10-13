@@ -1,4 +1,3 @@
-
 import asyncio
 import websockets
 import json 
@@ -13,7 +12,7 @@ TIMEZONE = pytz.timezone('UTC')
 class Orderbook: 
 	def __init__(self): 
 		self.orderbookMapping = {
-			"okcoin": {
+			"orderbook": {
 				"properties": {
 					"currency_pair": { "type": "string"},
 					"uuid": { "type": "string", "index": "no"},
@@ -25,7 +24,7 @@ class Orderbook:
 					"order_type": { "type": "string"}, 
 					"websocket_name": { "type": "string" }, 
 					"depth": { "type": "string" }, 
-					"is_future": {"type": "boolean"} 
+					"is_future": {"type": "string"} 
 				}
 			}
 		}

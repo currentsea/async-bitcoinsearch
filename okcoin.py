@@ -26,9 +26,10 @@ import websockets
 import json 
 import os
 import re
-import ticker
+from ticker import Ticker
 import elasticsearch
 from orderbook import Orderbook
+from trades import Trade
 import os, time, datetime, sys, json, hashlib, zlib, base64, json, re, elasticsearch, argparse, uuid, pytz
 
 OKCOIN_WEBSOCKETS_URL= "wss://real.okcoin.com:10440/websocket/okcoinapi"
@@ -69,35 +70,56 @@ class OkCoinSocket:
 	def consumer(self, marketData): 
 		connection = elasticsearch.Elasticsearch(self.esHost)
 		self.ensure(connection) 
+		self.docMappings(connection) 
 		dataSet = json.loads(marketData) 
 		item = {}
 		for infoPoint in dataSet: 
 			try: 
+
 				channel = str(infoPoint["channel"])
+				regex = "ok_sub_(spotusd|futureusd)_(b|l)tc_(.[A-Za-z0-9]+)"
+				search = re.search(regex, channel) 
+				if search.group(1) == "futureusd": 
+					isFuture = True
+				else: 
+					isFuture = False 
+				currencyPair = str(search.group(2)) + "tc_usd"
+				print (currencyPair) 
 				if "depth" in channel: 
 					# ticker|depth|trades|kline|ticker|index
-					regex = "ok_sub_(spotusd|futureusd)_(b|l)tc_(.[A-Za-z0-9]+)"
-					search = re.search(regex, channel) 
-					if search.group(1) == "futureusd": 
-						isFuture = True
-					else: 
-						isFuture = False 
-					currencyPair = str(search.group(2)) + "tc_usd"
-					print (currencyPair) 
 					mybook = Orderbook()
 					dto = mybook.getDepthDtoList(infoPoint, currencyPair, isFuture)
 					for item in dto: 
 						item["websocket_name"] = channel
-						print(self.postDto(item, connection))
+						self.postDto(item, connection, "orderbook")
+
+				elif "ticker" in channel and "data" in infoPoint: 
+					myticker = Ticker() 
+					if isFuture == False: 
+						# print (infoPoint) 
+						dto = myticker.getTickerDto(infoPoint, currencyPair) 
+						self.postDto(dto, connection, "ticker")
+					elif isFuture == True: 
+						print ("future ticker") 
+						dto = myticker.getFutureTickerDto(infoPoint, channel, currencyPair)
+						self.postDto(dto, connection, "future_ticker") 
+
+				elif "trades" in channel: 
+					mytrade = Trade() 
+					dtoList = mytrade.getCompletedTradeDtoList(infoPoint, currencyPair)
+					for item in dtoList: 
+						item["is_future"] = isFuture
+						item["websocket_name"] = channel 		
+						self.postDto(item, connection, "completed_trades") 
+
 					# print (infoPoint)
 			except: 
 				raise
 	# Ensures the most up to date mappings and such are set in elasticsearch 
 	def ensure(self, connection):
-		if self.active == True: 
+		if connection.indices.exists("currentsea") == False: 
 			try:
 				connection.indices.create("currentsea") 
-				self.docMappings()
 			except elasticsearch.exceptions.RequestError as e:
 				print ("INDEX " + DEFAULT_INDEX + " ALREADY EXISTS")
 				self.active = True 
@@ -105,8 +127,15 @@ class OkCoinSocket:
 				pass
 		pass 
 
-	def docMappings(self): 
-		return self.es.indices.put_mapping(index=DEAFULT_INDEX, doc_type="orderbook", body=orderbook.orderbookMapping)
+	def docMappings(self, connection, indexName=DEFAULT_INDEX): 
+		try: 
+			connection.indices.put_mapping(index=indexName, doc_type="orderbook", body=Orderbook().orderbookMapping)
+			connection.indices.put_mapping(index=indexName, doc_type="ticker", body=Ticker().tickerMapping)
+			connection.indices.put_mapping(index=indexName, doc_type="completed_trades", body=Trade().completedTradeMapping)
+			connection.indices.put_mapping(index=indexName, doc_type="future_ticker", body=Ticker().futureTickerMapping)
+		except: 
+			raise 
+		pass
 
 	def capture(self, knowledge, channelName, indexName=DEFAULT_INDEX): 
 		newDocUploadRequest = self.es.create(index=indexName, doc_type=channelName, ignore=[400], id=uuid.uuid4(), body=dto)
@@ -116,7 +145,7 @@ class OkCoinSocket:
 		channels = self.getChannelDict()
 		return asyncio.get_event_loop().run_until_complete(self.processMarketData(channels)) 	
 	
-	def postDto(self, dto, conn, indexName="currentsea", docType="orderbook"):
+	def postDto(self, dto, conn, docType="orderbook", indexName="currentsea"):
 		newDocUploadRequest = conn.create(index=indexName, doc_type=docType, ignore=[400], id=uuid.uuid4(), body=dto)
 		return newDocUploadRequest["created"]
 

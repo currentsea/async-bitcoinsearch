@@ -271,7 +271,6 @@ class Okcoin():
 
 		if type(dataSet) is list:
 			try:
-				# [time, open_price, highest_price, lowest_price, close_price, volume]
 				futureRegex = re.search("ok_sub_spotusd_(b|l)tc_kline_(.+)", channelName)
 				futureType = futureRegex.group(2)
 				currencySymbol = futureRegex.group(1)
@@ -296,9 +295,6 @@ class Okcoin():
 			try:
 				for jsonData in dataSet:
 					futureData = jsonData["data"]
-
-					# {'vol': '696068.00', 'high': 471.64, 'contractId': '20160325012', 'low': 461.74, 'buy': 464.68, 'last': '464.68', 'hold_amount': 235764, 'unitAmount': 100, 'sell': 464.76}
-
 					futureDto["volume"] = float(futureData["vol"])
 					futureDto["high"] = float(futureData["high"])
 					futureDto["contract_id"] = str(futureData["contractId"])
@@ -389,7 +385,7 @@ class Okcoin():
 				volumeVal = absVol
 				dto["volume"] = float(volumeVal)
 			else:
-				raise IOError("WTF order type is not ask or bid for completed trade")
+				raise IOError("Order type is not ask or bid for completed trade (wtf?)")
 			dto["timestamp"] = str(timestamp)
 			dtoList.append(dto)
 		return dtoList
