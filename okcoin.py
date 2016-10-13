@@ -119,7 +119,6 @@ class OkCoinSocket:
 						dto = myticker.getTickerDto(infoPoint, currencyPair) 
 						self.postDto(dto, connection, "ticker")
 					elif isFuture == True: 
-						# print ("future ticker") 
 						dto = myticker.getFutureTickerDto(infoPoint, channel, currencyPair)
 						dto["exchange"] = "OKCOIN"
 						self.postDto(dto, connection, "future_ticker") 
@@ -132,8 +131,6 @@ class OkCoinSocket:
 						item["exchange"] = "OKCOIN" 	
 						self.postDto(item, connection, "completed_trades") 
 				elif "kline" in channel: 
-					# print ("\n---") 
-					# print ("KLINE: " + channel)
 					myklein = KlineCandle() 
 					if "data" in infoPoint: 
 						if len(infoPoint["data"]) > 1: 
@@ -143,15 +140,9 @@ class OkCoinSocket:
 									klineDto["exchange"] = "OKCOIN" 
 									klineDto["is_future"] = isFuture 
 									klineDto["websocket_name"] = channel
-									# print ("!!!!!\n\n")
-									# print (klineDto)  
-									self.postDto(klineDto, connection, "kline_candles")
 								else: 
 									klineDto = myklein.getKlineDto(infoPoint["data"], currencyPair, channel) 
-									# print ("HEYYY") 
-									# print (klineDto)
-					# print ("---") 
-
+							self.postDto(klineDto, connection, "kline_candles")
 			except: 
 				raise
 
@@ -195,6 +186,6 @@ if __name__ == "__main__":
 	try: 
 		esHost = sys.argv[1]
 	except: 
-		esHost = "http://localhost:9200"  
+		esHost = "http://54.191.203.12:9200"  
 		socket = OkCoinSocket(esHost) 
 	socket.initialize() 
