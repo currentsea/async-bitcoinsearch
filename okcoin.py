@@ -58,6 +58,7 @@ class OkCoinSocket:
 				for subscription in channelSubscriptions: 
 					await websocket.send("{'event':'addChannel','channel':'" + subscription + "'}") 
 				greeting = await websocket.recv()
+				print (greeting) 
 			finally: 
 				while True:
 					try:
@@ -122,10 +123,10 @@ class OkCoinSocket:
 						dto = myticker.getFutureTickerDto(infoPoint, channel, currencyPair)
 						dto["exchange"] = "OKCOIN"
 						self.postDto(dto, connection, "future_ticker") 
-				elif "trades" in channel: 
+				elif "trade" in channel: 
 					mytrade = Trade() 
 					if "data" in infoPoint: 
-						dtoList = mytrade.getCompletedTradeDtoList(infoPoint["data"], currencyPair)
+						dtoList = mytrade.getCompletedTradeDtoList(infoPoint, currencyPair)
 						for item in dtoList: 
 							item["is_future"] = "futureusd" in channel
 							item["websocket_name"] = channel 	
