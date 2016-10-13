@@ -24,7 +24,9 @@ class Orderbook:
 					"order_type": { "type": "string"}, 
 					"websocket_name": { "type": "string" }, 
 					"depth": { "type": "string" }, 
-					"is_future": {"type": "string"} 
+					"is_future": {"type": "string"}, 
+					"exchange": { "type": "string"}, 
+					"contract_type": { "type": "string"} 
 				}
 			}
 		}
@@ -47,6 +49,7 @@ class Orderbook:
 
 	def getDepthDtoList(self, dataSet, currencyPair, isFuture):
 		dtoList = []
+
 		if "data" in dataSet: 
 			timestamp = dataSet["data"]["timestamp"]
 			for bidEntry in dataSet["data"]["bids"]: 

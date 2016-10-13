@@ -223,7 +223,7 @@ class Okcoin():
 		# value of Y is:
 	def getKlineMapping(self):
 		self.klineMapping = {
-			"okcoin": {
+			"kline_candles": {
 				"properties": {
 					"uuid": { "type": "string", "index": "no"},
 					"date": {"type": "date"},
@@ -233,8 +233,12 @@ class Okcoin():
 					"lowest_price": {"type": "float"},
 					"close_price": {"type": "float"},
 					"volume": {"type": "float"},
-					"currency_symbol": {"type": "string"},
-					"contract_type": {"type": "string"}
+					"currency_pair": {"type": "string"},
+					"contract_type": {"type": "string"}, 
+					"websocket_name": { "type": "string" },
+					"exchange": { "type": "string" }, 
+					"candle_type": { "type": "string" }, 
+					"is_future": { "type": "boolean" } 
 				}
 			}
 		}

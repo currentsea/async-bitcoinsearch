@@ -31,7 +31,8 @@ class Ticker:
 					"bid": {"type": "float"},
 					"currency_pair": {"type":"string"}, 
 					"websocket_name": { "type": "string" }, 
-					"is_future" : { "type": "string"}  
+					"is_future" : { "type": "string"}, 
+					"exchange": { "type": "string"}
 				}
 			}
 		}
@@ -50,7 +51,8 @@ class Ticker:
 					"volume": {"type": "float"},
 					"contract_type": {"type": "string"},
 					"contract_id": {"type": "string", "index": "no"},
-					"currency_pair": {"type": "string"}
+					"currency_pair": {"type": "string"}, 
+					"exchange": { "type": "string" } 
 				}
 			}
 		}
@@ -81,7 +83,6 @@ class Ticker:
 		if "data" in dataSet: 
 			dto["uuid"] = str(uuid.uuid4())
 			dto["date"] = datetime.datetime.now(TIMEZONE)
-			print (dataSet["data"]["vol"])
 			dataObj = dataSet["data"] 
 
 			dto["volume"] = float(str(dataObj["vol"].replace(",","")))

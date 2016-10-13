@@ -28,14 +28,14 @@ class Trade:
 					"currency_pair": {"type":"string"},
 					"timestamp": { "type": "string", "index": "no"}, 
 					"websocket_name": { "type": "string" }, 
-					"is_future": { "type": "string" } 
+					"is_future": { "type": "string" }, 
+					"exchange": { "type": "string" } 
 				}
 			}
 		}
 
 	def getCompletedTradeDtoList(self, dataSet, currencyPair):
 		dtoList = []
-		print (dataSet) 
 		# for completedTrade in dataSet:
 		# 	dto = {}
 		# 	dto["order_id"] = str(completedTrade[0])

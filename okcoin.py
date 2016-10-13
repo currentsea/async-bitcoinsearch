@@ -26,11 +26,17 @@ import websockets
 import json 
 import os
 import re
-from ticker import Ticker
+import sys 
 import elasticsearch
-from orderbook import Orderbook
+import time 
+import datetime 
+import hashlib, zlib, base64, json, re, elasticsearch, argparse, uuid, pytz
+
 from trades import Trade
-import os, time, datetime, sys, json, hashlib, zlib, base64, json, re, elasticsearch, argparse, uuid, pytz
+from ticker import Ticker
+from orderbook import Orderbook
+from kline import KlineCandle
+from future_index import FutureIndex
 
 OKCOIN_WEBSOCKETS_URL= "wss://real.okcoin.com:10440/websocket/okcoinapi"
 DEFAULT_INDEX = "currentsea" 
@@ -43,6 +49,7 @@ class OkCoinSocket:
 	def __init__(self, esHost): 
 		self.esHost = esHost
 		self.active = False 
+		self.count = 0
 
 	@asyncio.coroutine
 	async def processMarketData(self, channelSubscriptions): 
@@ -51,7 +58,6 @@ class OkCoinSocket:
 				for subscription in channelSubscriptions: 
 					await websocket.send("{'event':'addChannel','channel':'" + subscription + "'}") 
 				greeting = await websocket.recv()
-				print (greeting) 
 			finally: 
 				while True:
 					try:
@@ -68,53 +74,87 @@ class OkCoinSocket:
 		return channelDict
 
 	def consumer(self, marketData): 
-		connection = elasticsearch.Elasticsearch(self.esHost)
+		connection = elasticsearch.Elasticsearch(self.esHost) 
 		self.ensure(connection) 
 		self.docMappings(connection) 
 		dataSet = json.loads(marketData) 
 		item = {}
 		for infoPoint in dataSet: 
 			try: 
-
 				channel = str(infoPoint["channel"])
-				regex = "ok_sub_(spotusd|futureusd)_(b|l)tc_(.[A-Za-z0-9]+)"
+				regex = "ok_sub_(spotusd|futureusd)_(b|l)tc_(.[A-Za-z0-9_]+)"
 				search = re.search(regex, channel) 
 				if search.group(1) == "futureusd": 
 					isFuture = True
 				else: 
 					isFuture = False 
 				currencyPair = str(search.group(2)) + "tc_usd"
-				print (currencyPair) 
-				if "depth" in channel: 
-					# ticker|depth|trades|kline|ticker|index
+				self.count = self.count + 1
+				if self.count % 100 == 0: 
+					print ("PROCESSED " + str(self.count) + " DATA POINTS SO FAR...") 
+				if search.group(3) == "index": 
+					myindex = FutureIndex()
+					dto = myindex.getFutureIndexDto(infoPoint, currencyPair)
+					dto["exchange"] = "OKCOIN"
+					self.postDto(dto, connection, "future_price_index")
+				elif "depth" in channel: 
 					mybook = Orderbook()
 					dto = mybook.getDepthDtoList(infoPoint, currencyPair, isFuture)
 					for item in dto: 
 						item["websocket_name"] = channel
+						item["is_future"] = isFuture
+						if isFuture == True: 
+							check = re.search("depth_(this_week|next_week|quarter)_(20|60)", search.group(3).strip())
+							item["contract_type"] = str(check.group(1))
+							item["depth"] = str(check.group(2))
+						else: 
+							item["contract_type"] = "spot"
+							depthSearch = re.search("depth_(20|60)", search.group(3).strip()) 
+							item["depth"] = depthSearch.group(1) 
+						item["exchange"] = "OKCOIN"	
 						self.postDto(item, connection, "orderbook")
-
 				elif "ticker" in channel and "data" in infoPoint: 
 					myticker = Ticker() 
 					if isFuture == False: 
-						# print (infoPoint) 
 						dto = myticker.getTickerDto(infoPoint, currencyPair) 
 						self.postDto(dto, connection, "ticker")
 					elif isFuture == True: 
-						print ("future ticker") 
+						# print ("future ticker") 
 						dto = myticker.getFutureTickerDto(infoPoint, channel, currencyPair)
+						dto["exchange"] = "OKCOIN"
 						self.postDto(dto, connection, "future_ticker") 
-
 				elif "trades" in channel: 
 					mytrade = Trade() 
 					dtoList = mytrade.getCompletedTradeDtoList(infoPoint, currencyPair)
 					for item in dtoList: 
 						item["is_future"] = isFuture
-						item["websocket_name"] = channel 		
+						item["websocket_name"] = channel 	
+						item["exchange"] = "OKCOIN" 	
 						self.postDto(item, connection, "completed_trades") 
+				elif "kline" in channel: 
+					# print ("\n---") 
+					# print ("KLINE: " + channel)
+					myklein = KlineCandle() 
+					if "data" in infoPoint: 
+						if len(infoPoint["data"]) > 1: 
+							for klineData in infoPoint["data"]: 
+								if type(klineData) is list: 
+									klineDto = myklein.getKlineDto(klineData, currencyPair, channel) 
+									klineDto["exchange"] = "OKCOIN" 
+									klineDto["is_future"] = isFuture 
+									klineDto["websocket_name"] = channel
+									# print ("!!!!!\n\n")
+									# print (klineDto)  
+									self.postDto(klineDto, connection, "kline_candles")
+								else: 
+									klineDto = myklein.getKlineDto(infoPoint["data"], currencyPair, channel) 
+									# print ("HEYYY") 
+									# print (klineDto)
+					# print ("---") 
 
-					# print (infoPoint)
 			except: 
 				raise
+
 	# Ensures the most up to date mappings and such are set in elasticsearch 
 	def ensure(self, connection):
 		if connection.indices.exists("currentsea") == False: 
@@ -133,6 +173,8 @@ class OkCoinSocket:
 			connection.indices.put_mapping(index=indexName, doc_type="ticker", body=Ticker().tickerMapping)
 			connection.indices.put_mapping(index=indexName, doc_type="completed_trades", body=Trade().completedTradeMapping)
 			connection.indices.put_mapping(index=indexName, doc_type="future_ticker", body=Ticker().futureTickerMapping)
+			connection.indices.put_mapping(index=indexName, doc_type="future_price_index", body=FutureIndex().futurePriceIndexMapping) 
+			connection.indices.put_mapping(index=indexName, doc_type="kline_candles", body=KlineCandle().klineMapping) 
 		except: 
 			raise 
 		pass
@@ -153,6 +195,6 @@ if __name__ == "__main__":
 	try: 
 		esHost = sys.argv[1]
 	except: 
-		esHost = "http://localhost:9200" 
+		esHost = "http://localhost:9200"  
 		socket = OkCoinSocket(esHost) 
 	socket.initialize() 
