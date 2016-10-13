@@ -28,12 +28,13 @@ import os
 import re
 import ticker
 import elasticsearch
-import orderbook
+from orderbook import Orderbook
 import os, time, datetime, sys, json, hashlib, zlib, base64, json, re, elasticsearch, argparse, uuid, pytz
 
 OKCOIN_WEBSOCKETS_URL= "wss://real.okcoin.com:10440/websocket/okcoinapi"
 DEFAULT_INDEX = "currentsea" 
 CHANNEL_FILE = "channels.txt" 
+TIMEZONE = pytz.timezone('UTC')
 
 class OkCoinSocket: 
 
@@ -73,10 +74,20 @@ class OkCoinSocket:
 		for infoPoint in dataSet: 
 			try: 
 				channel = str(infoPoint["channel"])
-				# ticker|depth|trades|kline|ticker|index
-				regex = "ok_sub_(spotusd|futureusd)_(b|l)tc_(.[A-Za-z0-9]+)"
-				search = re.search(regex, channel) 
-				print (infoPoint)
+				if "depth" in channel: 
+					# ticker|depth|trades|kline|ticker|index
+					regex = "ok_sub_(spotusd|futureusd)_(b|l)tc_(.[A-Za-z0-9]+)"
+					search = re.search(regex, channel) 
+					if search.group(1) == "futureusd": 
+						isFuture = True
+					else: 
+						isFuture = False 
+					currencyPair = str(search.group(2)) + "tc_usd"
+					print (currencyPair) 
+					mybook = Orderbook()
+					dto = mybook.getDepthDtoList(infoPoint, currencyPair, isFuture)
+					print (dto)
+					# print (infoPoint)
 			except: 
 				raise
 	# Ensures the most up to date mappings and such are set in elasticsearch 

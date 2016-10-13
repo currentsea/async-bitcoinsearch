@@ -1,4 +1,15 @@
 
+import asyncio
+import websockets
+import json 
+import os
+import re
+import ticker
+import elasticsearch
+import orderbook
+import os, time, datetime, sys, json, hashlib, zlib, base64, json, re, elasticsearch, argparse, uuid, pytz
+TIMEZONE = pytz.timezone('UTC')
+
 class Orderbook: 
 	def __init__(self): 
 		self.orderbookMapping = {
@@ -13,43 +24,38 @@ class Orderbook:
 					"absolute_volume": { "type": "float"},
 					"order_type": { "type": "string"}, 
 					"websocket_name": { "type": "string" }, 
-					"depth": { "type": "string" }
+					"depth": { "type": "string" }, 
+					"is_future": {"type": "boolean"} 
 				}
 			}
 		}
 
 
-	def getDepthDtoList(self, dataSet, currencyPair):
+	def getEntry(self, entry, entryType, currencyPair, timestamp): 
+		dto = {}
+		if len(entry) == 2:
+			dto["uuid"] = str(uuid.uuid4())
+			dto["date"] = datetime.datetime.now(TIMEZONE)
+			dto["currency_pair"] = str(currencyPair)
+			dto["timestamp"] = str(timestamp)
+			dto["price"] = float(entry[0])
+			volumeVal = float(entry[1])
+			dto["volume"] = float(volumeVal)
+			dto["absolute_volume"] = float(volumeVal)
+			dto["order_type"] = entryType
+			dto["count"] = float(1)
+		return dto 
+
+	def getDepthDtoList(self, dataSet, currencyPair, isFuture):
 		dtoList = []
-		print ("------")
-		for bid in dataSet["bids"]:
-			dto = {}
-			if len(bid) == 2:
-				dto["uuid"] = str(uuid.uuid4())
-				dto["date"] = datetime.datetime.now(TIMEZONE)
-				dto["currency_pair"] = str(currencyPair)
-				dto["timestamp"] = str(dataSet["timestamp"])
-				dto["price"] = float(bid[0])
-				volumeVal = float(bid[1])
-				dto["volume"] = float(volumeVal)
-				dto["absolute_volume"] = float(volumeVal)
-				dto["order_type"] = "BID"
-				dto["count"] = float(1)
-				dtoList.append(dto)
-		for ask in dataSet["asks"]:
-			dto = {}
-			if len(ask) == 2:
-				dto["uuid"] = str(uuid.uuid4())
-				dto["date"] = datetime.datetime.now(TIMEZONE)
-				dto["currency_pair"] = str(currencyPair)
-				dto["timestamp"] = str(dataSet["timestamp"])
-				dto["price"] = float(ask[0])
-				volumeVal = float(ask[1])
-				volumeVal = volumeVal * -1
-				dto["volume"] = float()
-				dto["absolute_volume"] = float(volumeVal)
-				dto["order_type"] = "ASK"
-				dto["count"] = float(1)
-				dtoList.append(dto)
-		print ("------")
+		if "data" in dataSet: 
+			timestamp = dataSet["data"]["timestamp"]
+			for bidEntry in dataSet["data"]["bids"]: 
+				curDto = self.getEntry(bidEntry, "BID", currencyPair, timestamp)
+				dtoList.append(curDto) 
+				curDto["is_future"] = isFuture
+			for askEntry in dataSet["data"]["asks"]: 
+				curDto = self.getEntry(askEntry, "ASK", currencyPair, timestamp) 
+				curDto["is_future"] = isFuture
+				dtoList.append(curDto) 
 		return dtoList
