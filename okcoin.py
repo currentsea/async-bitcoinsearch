@@ -124,12 +124,13 @@ class OkCoinSocket:
 						self.postDto(dto, connection, "future_ticker") 
 				elif "trades" in channel: 
 					mytrade = Trade() 
-					dtoList = mytrade.getCompletedTradeDtoList(infoPoint, currencyPair)
-					for item in dtoList: 
-						item["is_future"] = isFuture
-						item["websocket_name"] = channel 	
-						item["exchange"] = "OKCOIN" 	
-						self.postDto(item, connection, "completed_trades") 
+					if "data" in infoPoint: 
+						dtoList = mytrade.getCompletedTradeDtoList(infoPoint["data"], currencyPair)
+						for item in dtoList: 
+							item["is_future"] = "futureusd" in channel
+							item["websocket_name"] = channel 	
+							item["exchange"] = "OKCOIN" 	
+							self.postDto(item, connection, "completed_trades") 
 				elif "kline" in channel: 
 					myklein = KlineCandle() 
 					if "data" in infoPoint: 
@@ -186,6 +187,6 @@ if __name__ == "__main__":
 	try: 
 		esHost = sys.argv[1]
 	except: 
-		esHost = "http://54.191.203.12:9200"  
+		esHost = "http://localhost:9200"  
 		socket = OkCoinSocket(esHost) 
 	socket.initialize() 

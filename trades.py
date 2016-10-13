@@ -34,31 +34,30 @@ class Trade:
 			}
 		}
 
-	def getCompletedTradeDtoList(self, dataSet, currencyPair):
+	def getCompletedTradeDtoList(self, dataPoints, currencyPair):
 		dtoList = []
-		# for completedTrade in dataSet:
-		# 	dto = {}
-		# 	dto["order_id"] = str(completedTrade[0])
-		# 	dto["price"] = float(completedTrade[1])
-		# 	dto["uuid"] = str(uuid.uuid4())
-		# 	dto["date"] = datetime.datetime.now(TIMEZONE)
-		# 	dto["currency_pair"] = str(currencyPair)
-		# 	absVol = float(completedTrade[2])
-		# 	dto["absolute_volume"] = float(absVol)
-		# 	timestamp = str(completedTrade[3])
-		# 	orderType = str(completedTrade[4])
-		# 	orderType = orderType.upper()
-		# 	dto["order_type"] = orderType
-		# 	if orderType == "BID":
-		# 		volumeVal = absVol * -1
-		# 		dto["volume"] = float(volumeVal)
-		# 	elif orderType == "ASK":
-		# 		volumeVal = absVol
-		# 		dto["volume"] = float(volumeVal)
-		# 	else:
-		# 		raise IOError("Order type is not ask or bid for completed trade (wtf?)")
-		# 	dto["timestamp"] = str(timestamp)
-		# 	dto["is_future"] = isFuture
-		# 	dto["websocket_name"] = str(channel)
-		# 	dtoList.append(dto)
+		dataSet = dataPoints["data"]		
+		for completedTrade in dataSet:
+			dto = {}
+			dto["order_id"] = str(completedTrade[0])
+			dto["price"] = float(completedTrade[1])
+			dto["uuid"] = str(uuid.uuid4())
+			dto["date"] = datetime.datetime.now(TIMEZONE)
+			dto["currency_pair"] = str(currencyPair)
+			absVol = float(completedTrade[2])
+			dto["absolute_volume"] = float(absVol)
+			timestamp = str(completedTrade[3])
+			orderType = str(completedTrade[4])
+			orderType = orderType.upper()
+			dto["order_type"] = orderType
+			if orderType == "BID":
+				volumeVal = absVol * -1
+				dto["volume"] = float(volumeVal)
+			elif orderType == "ASK":
+				volumeVal = absVol
+				dto["volume"] = float(volumeVal)
+			else:
+				raise IOError("Order type is not ask or bid for completed trade (wtf?)")
+			dto["timestamp"] = str(timestamp)
+			dtoList.append(dto)
 		return dtoList		
