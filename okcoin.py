@@ -86,7 +86,8 @@ class OkCoinSocket:
 					print (currencyPair) 
 					mybook = Orderbook()
 					dto = mybook.getDepthDtoList(infoPoint, currencyPair, isFuture)
-					print (dto)
+					for item in dto: 
+						print(self.postDto(item, connection))
 					# print (infoPoint)
 			except: 
 				raise
@@ -95,6 +96,7 @@ class OkCoinSocket:
 		if self.active == True: 
 			try:
 				connection.indices.create("currentsea") 
+				self.docMappings()
 			except elasticsearch.exceptions.RequestError as e:
 				print ("INDEX " + DEFAULT_INDEX + " ALREADY EXISTS")
 				self.active = True 
@@ -112,6 +114,10 @@ class OkCoinSocket:
 	def initialize(self): 
 		channels = self.getChannelDict()
 		return asyncio.get_event_loop().run_until_complete(self.processMarketData(channels)) 	
+	
+	def postDto(self, dto, conn, indexName="currentsea", docType="orderbook"):
+		newDocUploadRequest = conn.create(index=indexName, doc_type=docType, ignore=[400], id=uuid.uuid4(), body=dto)
+		return newDocUploadRequest["created"]
 
 if __name__ == "__main__":
 	try: 
